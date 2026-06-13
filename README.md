@@ -45,6 +45,12 @@ CreditShield enables lenders to:
 
 ---
 
+## Project Architecture
+
+![Architecture](pipeline.png)
+
+---
+
 ## Dataset
 
 **UCI Default of Credit Card Clients Dataset**
@@ -61,8 +67,6 @@ CreditShield enables lenders to:
 ## Feature Engineering
 
 Built behavioral credit-risk features from payment and utilization history.
-
-### Final Model Features
 
 ```text
 LIMIT_BAL
@@ -87,6 +91,31 @@ utilization_ratio
 latest_payment_ratio
 ```
 
+---
+## Reject Inference
+
+Traditional credit risk models are trained only on approved applicants, creating selection bias because rejected applicants have no observed repayment outcomes.
+
+To address this, CreditShield implements a Reject Inference pipeline to estimate the risk profile of previously rejected customers and create a more representative training dataset.
+
+Approach-
+Step 1: Synthetic Approval Policy
+
+Step 2: Train Approval Population Model
+
+Step 3: Infer Rejected Outcomes
+
+Step 4: Build Final Modeling Dataset
+
+```text
+Approved Customers
+        +
+Rejected Customers (Inferred Labels)
+        ↓
+Reject-Inference Enhanced Dataset
+
+### Final Model Features
+```
 ---
 
 ## Model Development
@@ -269,57 +298,40 @@ Final Guardrailed Limit
 
 ---
 
-## Project Architecture
+## Project Structure
 
 ```text
-Customer Data
-      │
-      ▼
-Feature Engineering
-      │
-      ▼
-Optuna Optimization
-      │
-      ├── Logistic Regression
-      ├── Random Forest
-      ├── XGBoost
-      ├── LightGBM
-      └── CatBoost
-      │
-      ▼
-Best Model Selection
-      │
-      ▼
-Probability of Default
-      │
-      ▼
-Risk Segmentation
-      │
-      ▼
-CLI Engine
-      │
-      ▼
-Guardrails
-      │
-      ▼
-Final Recommended Limit
-      │
-      ▼
-SHAP Explainability
-      │
-      ▼
-Streamlit Dashboard
+CREDIT-RISK-PORTFOLIO-OPTIMIZATION-ENGINE
+│
+├── data
+│   └── UCI_Credit_Card.csv
+│
+├── models
+│   └── finallll_xgb_model.pkl
+│
+├── notebooks
+│   ├── Credit_Risk_Cleaned_Final_Model.ipynb
+│   └── draft.ipynb
+│
+├── outputs
+│   ├── final_xgb_model.pkl
+│   └── pd_results_final.csv
+│
+├── app-checkpoint.py
+│
+├── requirements.txt
+│
+├── README.md
+│
+└── .gitignore
+Clone repository:
 ```
-
----
 ---
 
 ## Installation
 
-Clone repository:
-
 ```bash
-git clone https://github.com/Jasminegrewal05/credit-risk-portfolio-optimization-engine
+git clone https://github.com/Tushika2024/CreditShield-AI-Credit-Risk-Limit-Optimization
 ```
 
 Install dependencies:
@@ -335,4 +347,13 @@ streamlit run app-checkpoint.py
 ```
 
 ---
+
+## Future Enhancements
+* Fair Lending Analysis
+* Model Monitoring
+* Drift Detection
+* Portfolio Stress Testing
+* Real Bureau Score Integration
+* Real-Time API Deployment
+
 
