@@ -331,7 +331,7 @@ Clone repository:
 ## Installation
 
 ```bash
-git clone https://github.com/Tushika2024/CreditShield-AI-Credit-Risk-Limit-Optimization
+git clone https://github.com/Jasminegrewal05/credit-risk-portfolio-optimization-engine
 ```
 
 Install dependencies:
