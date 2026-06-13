@@ -392,4 +392,212 @@ elif page == "Explainability Center":
             """,
             unsafe_allow_html=True
         )
+        
+#===============NEW CUSTOMER UNDERWRITING======================================================
+elif page == "New Customer Underwriting":
+    st.markdown(
+    '<div class="section-title">New Customer Underwriting</div>',
+    unsafe_allow_html=True
+    )
 
+    st.write(
+    "Enter customer details to generate Probability of Default, Risk Segment and Credit Decision."
+    )
+    #input form
+    col1,col2 = st.columns(2)
+
+    with col1:
+
+        LIMIT_BAL = st.number_input(
+            "Credit Limit",
+            min_value=10000,
+            value=200000
+        )
+
+        delinquency_score = st.number_input(
+            "Delinquency Score",
+            min_value=0,
+            value=0
+        )
+
+        recent_delinquency = st.number_input(
+            "Recent Delinquency",
+            min_value=0,
+            value=0
+        )
+
+        payment_ratio = st.number_input(
+            "Payment Ratio",
+            min_value=0.0,
+            value=0.80
+        )
+
+    with col2:
+
+        avg_payment = st.number_input(
+            "Average Payment",
+            min_value=0,
+            value=10000
+        )
+
+        current_utilisation = st.number_input(
+            "Current Utilisation",
+            min_value=0.0,
+            value=0.30
+        )
+
+        max_utilisation = st.number_input(
+            "Max Utilisation",
+            min_value=0.0,
+            value=0.50
+        )
+    #prediction button
+    if st.button("Generate Decision"):
+        customer = pd.DataFrame({
+
+            "delinquency_score":[delinquency_score],
+
+            "recent_delinquency":[recent_delinquency],
+
+            "payment_ratio":[payment_ratio],
+
+            "avg_payment":[avg_payment],
+
+            "current_utilisation":[current_utilisation],
+
+            "max_utilisation":[max_utilisation],
+
+            "LIMIT_BAL":[LIMIT_BAL]
+        })
+        predicted_pd = model.predict_proba(
+            customer
+        )[:,1][0]
+        #risk  decision
+        def assign_risk_segment(pd):
+
+            if pd < 0.10:
+                return "Low Risk"
+
+            elif pd < 0.30:
+                return "Medium Risk"
+
+            else:
+                return "High Risk"
+
+        risk_segment = assign_risk_segment(predicted_pd)
+        #cli decision
+        def cli_decision(pd_value,current_utilisation):
+
+            if pd_value < 0.10 and current_utilisation < 0.50:
+                return "Increase"
+
+            elif pd_value >= 0.30:
+                return "Decrease"
+
+            else:
+                return "Maintain"
+
+        decision = cli_decision(
+            predicted_pd,
+            current_utilisation
+        )
+        #limit change %
+        if decision == "Increase":
+
+            limit_change_pct = 0.20
+
+        elif decision == "Decrease":
+
+            limit_change_pct = -0.20
+
+        else:
+
+            limit_change_pct = 0.0
+        #recommended limit
+        recommended_limit = (
+            LIMIT_BAL *
+            (1 + limit_change_pct)
+        )
+        #guardrails
+        MAX_INCREASE = 0.25
+        MAX_DECREASE = 0.20
+
+        MIN_LIMIT = 10000
+        MAX_LIMIT = 1000000
+
+        upper_guardrail = (
+            LIMIT_BAL *
+            (1 + MAX_INCREASE)
+        )
+
+        lower_guardrail = (
+            LIMIT_BAL *
+            (1 - MAX_DECREASE)
+        )
+
+        guardrail_limit = min(
+            max(
+                recommended_limit,
+                lower_guardrail
+            ),
+            upper_guardrail
+        )
+
+        final_recommended_limit = min(
+            max(
+                guardrail_limit,
+                MIN_LIMIT
+            ),
+            MAX_LIMIT
+        )
+        #output display
+        c1,c2,c3,c4 = st.columns(4)
+
+        with c1:
+            st.metric(
+                "Probability of Default",
+                f"{predicted_pd:.2%}"
+            )
+
+        with c2:
+            st.metric(
+                "Risk Segment",
+                risk_segment
+            )
+
+        with c3:
+            st.metric(
+                "CLI Decision",
+                decision
+            )
+
+        with c4:
+            st.metric(
+                "Recommended Limit",
+                f"₹{final_recommended_limit:,.0f}"
+            )
+        #add buss summary
+        st.subheader("Credit Decision Summary")
+
+        summary = pd.DataFrame({
+            "Metric":[
+                "Probability of Default",
+                "Risk Segment",
+                "CLI Decision",
+                "Current Limit",
+                "Recommended Limit"
+            ],
+
+            "Value":[
+                f"{predicted_pd:.2%}",
+                risk_segment,
+                decision,
+                f"₹{LIMIT_BAL:,.0f}",
+                f"₹{final_recommended_limit:,.0f}"
+            ]
+        })
+
+        st.dataframe(
+            summary,
+            use_container_width=True
+        )
